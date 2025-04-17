@@ -1,5 +1,5 @@
 <template>
-  <el-container class="app-container">
+  <el-container class="app-container" :class="{ 'dark-mode': isDarkMode }">
     <el-header class="header">
       <div class="header-left">
         <div class="logo">
@@ -10,6 +10,13 @@
         </div>
       </div>
       <div class="header-right">
+        <el-switch
+          v-model="isDarkMode"
+          inline-prompt
+          :active-icon="Moon"
+          :inactive-icon="Sunny"
+          style="margin-right: 16px"
+        />
         <el-dropdown>
           <span class="user-info">
             <el-avatar :size="32" src="https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png" />
@@ -73,8 +80,23 @@ import {
   DataAnalysis,
   Document,
   Bell,
-  Setting
+  Setting,
+  Moon,
+  Sunny
 } from '@element-plus/icons-vue'
+import { ref, watch } from 'vue'
+
+const isDarkMode = ref(false)
+
+watch(isDarkMode, (newVal) => {
+  if (newVal) {
+    document.documentElement.classList.add('dark')
+    document.documentElement.setAttribute('data-theme', 'dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+    document.documentElement.setAttribute('data-theme', 'light')
+  }
+})
 </script>
 
 <style>
@@ -194,6 +216,7 @@ html, body {
 .header-right {
   display: flex;
   align-items: center;
+  gap: 16px;
 }
 
 .user-info {
@@ -236,4 +259,75 @@ html, body {
   width: 0 !important;height: 0;
 }
 
-</style> 
+</style>
+
+<style>
+/* 全局样式 */
+:root {
+  --bg-color: #ffffff;
+  --text-color: #303133;
+  --border-color: #ebeef5;
+  --sidebar-bg: #ffffff;
+  --menu-active-bg: #e8f3ff;
+  --menu-hover-bg: #f5f6f7;
+  --main-bg: #f6f8fa;
+}
+
+.dark {
+  --bg-color: #141414;
+  --text-color: #e5eaf3;
+  --border-color: #424242;
+  --sidebar-bg: #141414;
+  --menu-active-bg: #111b26;
+  --menu-hover-bg: #1a1a1a;
+  --main-bg: #0a0a0a;
+}
+</style>
+
+<style scoped>
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 0 8px;
+  height: 40px;
+  border-radius: 20px;
+  transition: all 0.3s;
+}
+
+.user-info:hover {
+  background-color: #f5f6f7;
+}
+
+:deep(.el-menu--popup) {
+  min-width: 140px;
+}
+
+:deep(.el-dropdown-menu__item) {
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+:deep(.el-dropdown-menu__item:not(.is-disabled):hover) {
+  background-color: #f5f6f7;
+  color: #1a1a1a;
+}
+
+:deep(.el-menu-item) span {
+  font-size: 14px;
+  margin-left: 4px;
+}
+::-webkit-scrollbar {
+  width: 0 !important;
+}
+   
+::-webkit-scrollbar {
+  width: 0 !important;height: 0;
+}
+
+</style>

@@ -1,78 +1,202 @@
 <template>
   <div class="analysis">
-    <el-row :gutter="20">
-      <el-col :span="24">
-        <el-card>
-          <template #header>
-            <div class="card-header">
-              <span>能耗分析</span>
-              <el-radio-group v-model="timeRange" size="small">
-                <el-radio-button label="day">日</el-radio-button>
-                <el-radio-button label="week">周</el-radio-button>
-                <el-radio-button label="month">月</el-radio-button>
-                <el-radio-button label="year">年</el-radio-button>
-              </el-radio-group>
-            </div>
-          </template>
-          <div ref="energyAnalysisChart" style="height: 400px"></div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <!-- 顶部筛选器 -->
+    <div class="filter-container">
+      <div class="filter-controls">
+        <el-cascader
+          :options="selectedDepartment"
+          :props="props"
+          :show-all-levels="true"
+          collapse-tags-tooltip
+          collapse-tags
+          clearable
+          size="small"
+          placeholder="部门"
+          class="filter-item"
+        />
+        <el-date-picker
+          v-model="dateRange"
+          type="daterange"
+          size="small"
+          range-separator="至"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+          class="filter-item"
+        />
+        <el-radio-group v-model="timeRange" size="small" class="filter-item">
+          <el-radio-button :value="'day'">日</el-radio-button>
+          <el-radio-button :value="'week'">周</el-radio-button>
+          <el-radio-button :value="'month'">月</el-radio-button>
+          <el-radio-button :value="'year'">年</el-radio-button>
+        </el-radio-group>
+      </div>
+    </div>
 
-    <el-row :gutter="20" class="chart-row">
-      <el-col :span="12">
-        <el-card>
-          <template #header>
-            <div class="card-header">
-              <span>产量与单耗趋势</span>
-            </div>
-          </template>
-          <div ref="productionChart" style="height: 300px"></div>
-        </el-card>
-      </el-col>
-      <el-col :span="12">
-        <el-card>
-          <template #header>
-            <div class="card-header">
-              <span>用电安全分析</span>
-            </div>
-          </template>
-          <div ref="safetyChart" style="height: 300px"></div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <!-- 图表区域 -->
+    <div class="chart-container">
+      <div class="chart-layout">
+        <!-- 左侧布局 -->
+        <div class="left-section">
+          <!-- 能耗分析 -->
+          <div class="chart-section">
+            <div class="chart-title">能耗分析</div>
+            <div ref="energyAnalysisChart" class="main-chart"></div>
+          </div>
 
-    <el-row :gutter="20" class="chart-row">
-      <el-col :span="12">
-        <el-card>
-          <template #header>
-            <div class="card-header">
-              <span>电量预测</span>
+          <!-- 产量与单耗趋势 & 用电安全分析 -->
+          <div class="chart-grid">
+            <div class="chart-item">
+              <div class="chart-title">产量与单耗趋势</div>
+              <div ref="productionChart" class="chart"></div>
             </div>
-          </template>
-          <div ref="forecastChart" style="height: 300px"></div>
-        </el-card>
-      </el-col>
-      <el-col :span="12">
-        <el-card>
-          <template #header>
-            <div class="card-header">
-              <span>功率因数分析</span>
+            <div class="chart-item">
+              <div class="chart-title">用电安全分析</div>
+              <div ref="safetyChart" class="chart"></div>
             </div>
-          </template>
-          <div ref="powerFactorChart" style="height: 300px"></div>
-        </el-card>
-      </el-col>
-    </el-row>
+          </div>
+
+          <!-- 功率因数分析 -->
+          <div class="chart-section">
+            <div class="chart-title">功率因数分析</div>
+            <div ref="powerFactorChart" class="chart"></div>
+          </div>
+        </div>
+
+        <!-- 右侧布局 -->
+        <div class="right-section">
+          <!-- 电量预测 -->
+          <div class="chart-item">
+            <div class="chart-title">电量预测</div>
+            <div ref="forecastChart" class="chart"></div>
+          </div>
+
+          <!-- 用水趋势 -->
+          <div class="chart-item">
+            <div class="chart-title">用水趋势</div>
+            <div ref="waterTrendChart" class="chart"></div>
+          </div>
+
+          <!-- 用汽趋势 -->
+          <div class="chart-item">
+            <div class="chart-title">用汽趋势</div>
+            <div ref="steamTrendChart" class="chart"></div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import * as echarts from 'echarts'
 
 const timeRange = ref('month')
+const dateRange = ref([])
+const props = { multiple: true }
+const selectedDepartment = ref([
+  {
+    value: 'honglingCopper',
+    label: '红岭铜矿',
+    children: [
+      {
+        value: 'mining',
+        label: '采矿车间',
+        children: [
+          {
+            value: 'excavation',
+            label: '采掘'
+          },
+          {
+            value: 'lifting',
+            label: '提升'
+          },
+          {
+            value: 'pressureVent',
+            label: '压风'
+          },
+          {
+            value: 'ventilation',
+            label: '通风'
+          }
+        ]
+      },
+      {
+        value: 'processing',
+        label: '选矿车间',
+        children: [
+          {
+            value: 'crushing2000',
+            label: '碎矿(2000T)'
+          },
+          {
+            value: 'crushing3000',
+            label: '碎矿(3000T)'
+          },
+          {
+            value: 'grinding2000',
+            label: '磨矿(2000T)'
+          },
+          {
+            value: 'grinding3000',
+            label: '磨矿(3000T)'
+          },
+          {
+            value: 'floating2000',
+            label: '浮选(2000T)'
+          },
+          {
+            value: 'floating3000',
+            label: '浮选(3000T)'
+          }
+        ]
+      },
+      {
+        value: 'maintenance',
+        label: '动修车间'
+      },
+      {
+        value: 'powerSupply',
+        label: '机动'
+      },
+      {
+        value: 'logistics',
+        label: '后勤、生活'
+      }
+    ]
+  },
+  {
+    value: 'scienceCity',
+    label: '科学城集团总部',
+    children: [
+      {
+        value: 'powerStation',
+        label: '配电房'
+      }
+    ]
+  },
+  {
+    value: 'machineRoom',
+    label: '机房',
+    children: [
+      {
+        value: 'machineRoom1',
+        label: '一楼机房'
+      },
+      {
+        value: 'machineRoom2',
+        label: '二楼机房'
+      },
+      {
+        value: 'machineRoom3',
+        label: '三楼机房'
+      }
+    ]
+  }
+])
 const energyAnalysisChart = ref(null)
+const waterTrendChart = ref(null)
+const steamTrendChart = ref(null)
 const productionChart = ref(null)
 const safetyChart = ref(null)
 const forecastChart = ref(null)
@@ -88,9 +212,17 @@ const initEnergyAnalysisChart = () => {
       }
     },
     legend: {
-      data: ['电力', '水', '天然气', '蒸汽']
+      orient: 'horizontal',
+      right: '4%',
+      top: '0%',
+      itemWidth: 15,
+      itemHeight: 10,
+      textStyle: {
+        fontSize: 12
+      }
     },
     grid: {
+      top: '40px',
       left: '3%',
       right: '4%',
       bottom: '3%',
@@ -130,6 +262,114 @@ const initEnergyAnalysisChart = () => {
   chart.setOption(option)
 }
 
+const initWaterTrendChart = () => {
+  const chart = echarts.init(waterTrendChart.value)
+  const option = {
+    tooltip: {
+      trigger: 'axis'
+    },
+    legend: {
+      orient: 'horizontal',
+      right: '4%',
+      top: '0%',
+      itemWidth: 15,
+      itemHeight: 10,
+      textStyle: {
+        fontSize: 12
+      }
+    },
+    grid: {
+      top: '40px',
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: ['1月', '2月', '3月', '4月', '5月', '6月', '7月']
+    },
+    yAxis: {
+      type: 'value',
+      name: '用水量(m³)'
+    },
+    series: [
+      {
+        name: '用水量',
+        type: 'line',
+        smooth: true,
+        data: [320, 332, 301, 334, 390, 330, 320],
+        itemStyle: { color: '#67C23A' },
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [
+              { offset: 0, color: 'rgba(103,194,58,0.3)' },
+              { offset: 1, color: 'rgba(103,194,58,0.1)' }
+            ]
+          }
+        }
+      }
+    ]
+  }
+  chart.setOption(option)
+}
+
+const initSteamTrendChart = () => {
+  const chart = echarts.init(steamTrendChart.value)
+  const option = {
+    tooltip: {
+      trigger: 'axis'
+    },
+    legend: {
+      orient: 'horizontal',
+      right: '4%',
+      top: '0%',
+      itemWidth: 15,
+      itemHeight: 10,
+      textStyle: {
+        fontSize: 12
+      }
+    },
+    grid: {
+      top: '40px',
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: ['1月', '2月', '3月', '4月', '5月', '6月', '7月']
+    },
+    yAxis: {
+      type: 'value',
+      name: '用汽量(t)'
+    },
+    series: [
+      {
+        name: '用汽量',
+        type: 'line',
+        smooth: true,
+        data: [150, 212, 201, 154, 190, 330, 410],
+        itemStyle: { color: '#E6A23C' },
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [
+              { offset: 0, color: 'rgba(230,162,60,0.3)' },
+              { offset: 1, color: 'rgba(230,162,60,0.1)' }
+            ]
+          }
+        }
+      }
+    ]
+  }
+  chart.setOption(option)
+}
+
 const initProductionChart = () => {
   const chart = echarts.init(productionChart.value)
   const option = {
@@ -140,7 +380,21 @@ const initProductionChart = () => {
       }
     },
     legend: {
-      data: ['产量', '单耗']
+      orient: 'horizontal',
+      right: '4%',
+      top: '0%',
+      itemWidth: 15,
+      itemHeight: 10,
+      textStyle: {
+        fontSize: 12
+      }
+    },
+    grid: {
+      top: '40px',
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      containLabel: true
     },
     xAxis: {
       type: 'category',
@@ -182,8 +436,21 @@ const initSafetyChart = () => {
       trigger: 'item'
     },
     legend: {
-      orient: 'vertical',
-      left: 'left'
+      orient: 'horizontal',
+      right: '4%',
+      top: '0%',
+      itemWidth: 15,
+      itemHeight: 10,
+      textStyle: {
+        fontSize: 12
+      }
+    },
+    grid: {
+      top: '40px',
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      containLabel: true
     },
     series: [
       {
@@ -215,7 +482,21 @@ const initForecastChart = () => {
       trigger: 'axis'
     },
     legend: {
-      data: ['实际', '预测']
+      orient: 'horizontal',
+      right: '4%',
+      top: '0%',
+      itemWidth: 15,
+      itemHeight: 10,
+      textStyle: {
+        fontSize: 12
+      }
+    },
+    grid: {
+      top: '40px',
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      containLabel: true
     },
     xAxis: {
       type: 'category',
@@ -250,6 +531,23 @@ const initPowerFactorChart = () => {
     tooltip: {
       trigger: 'axis'
     },
+    legend: {
+      orient: 'horizontal',
+      right: '4%',
+      top: '0%',
+      itemWidth: 15,
+      itemHeight: 10,
+      textStyle: {
+        fontSize: 12
+      }
+    },
+    grid: {
+      top: '40px',
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      containLabel: true
+    },
     xAxis: {
       type: 'category',
       data: ['1月', '2月', '3月', '4月', '5月', '6月']
@@ -278,11 +576,27 @@ const initPowerFactorChart = () => {
 
 onMounted(() => {
   initEnergyAnalysisChart()
+  initWaterTrendChart()
+  initSteamTrendChart()
   initProductionChart()
   initSafetyChart()
   initForecastChart()
   initPowerFactorChart()
 })
+
+watch([timeRange, dateRange, () => selectedDepartment.value], () => {
+  updateChartData()
+})
+
+const updateChartData = () => {
+  initEnergyAnalysisChart()
+  initWaterTrendChart()
+  initSteamTrendChart()
+  initProductionChart()
+  initSafetyChart()
+  initForecastChart()
+  initPowerFactorChart()
+}
 </script>
 
 <script>
@@ -294,16 +608,124 @@ export default {
 <style scoped>
 .analysis {
   margin-top: -32px;
-  padding: 16px 0 16px 0;
+  padding: 0;
+  background-color: #f5f7fa;
+  height: calc(100vh - 52px);
+  display: flex;
+  flex-direction: column;
 }
 
-.card-header {
+.filter-container {
+  background-color: white;
+  padding: 12px 26px;
+  margin-bottom: 6px;
+}
+
+.filter-controls {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
+  gap: 16px;
   align-items: center;
 }
 
-.chart-row {
-  margin-top: 20px;
+.filter-item {
+  min-width: 120px;
 }
-</style> 
+
+.chart-container {
+  flex: 1;
+  padding: 6px 0;
+  /* overflow: auto; */
+}
+
+.chart-layout {
+  display: flex;
+  gap: 16px;
+  height: 100%;
+}
+
+.left-section {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0; /* 防止flex子项溢出 */
+}
+
+.right-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0; /* 防止flex子项溢出 */
+}
+
+.chart-section {
+  background-color: white;
+  padding: 16px;
+  border-radius: 4px;
+  flex: 0 0 auto;
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.chart-item {
+  background-color: white;
+  padding: 16px;
+  border-radius: 4px;
+}
+
+.chart-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+  margin-bottom: 12px;
+}
+
+.main-chart {
+  height: 360px;
+}
+
+.chart {
+  height: 260px;
+}
+
+/* 响应式调整 */
+@media (max-width: 1400px) {
+  .chart-layout {
+    flex-direction: column;
+  }
+
+  .left-section,
+  .right-section {
+    flex: none;
+  }
+
+  .main-chart {
+    height: 300px;
+  }
+
+  .chart {
+    height: 240px;
+  }
+}
+
+@media (max-width: 768px) {
+  .filter-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-item {
+    width: 100%;
+  }
+
+  .chart-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
