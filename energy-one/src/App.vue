@@ -28,7 +28,7 @@
     <el-container class="main-container">
       <el-aside width="200px" class="sidebar">
         <el-menu
-          :default-active="activeMenu"
+          :default-active="$route.path"
           class="el-menu-vertical"
           router
         >
